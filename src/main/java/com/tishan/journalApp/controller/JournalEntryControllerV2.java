@@ -1,15 +1,16 @@
 package com.tishan.journalApp.controller;
 
 import com.tishan.journalApp.entity.JournalEntry;
+import com.tishan.journalApp.entity.User;
 import com.tishan.journalApp.service.JournalEntryService;
+import com.tishan.journalApp.service.UserService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/journal")
@@ -18,16 +19,25 @@ public class JournalEntryControllerV2 {
     @Autowired
     private JournalEntryService journalEntryService;
 
+    @Autowired
+    private UserService userService;
 
-    @GetMapping
-    public List<JournalEntry> getAll() {
-        return journalEntryService.getAll();
+
+    @GetMapping("/{userName}")
+    public ResponseEntity<List<JournalEntry>> getAllJournalEntriesOfUser(@PathVariable String userName) {
+        User user = userService.findByUserName(userName);
+        if (user == null) return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.OK).body(user.getJournalEntries());
     }
 
-    @PostMapping
-    public boolean createEntry(@RequestBody JournalEntry journalEntry) {
-        journalEntryService.saveEntry(journalEntry);
-        return true;
+    @PostMapping("/{userName}")
+    public ResponseEntity<?> createJournalEntryForUser(@RequestBody JournalEntry journalEntry, @PathVariable String userName) {
+        try {
+            journalEntryService.saveEntry(journalEntry, userName);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(true);
     }
 
     @GetMapping("id/{thisId}")
@@ -40,14 +50,14 @@ public class JournalEntryControllerV2 {
         }
     }
 
-    @DeleteMapping("id/{thisId}")
-    public boolean deleteJournalEntryById(@PathVariable("thisId") String thisId) {
+    @DeleteMapping("id/{thisId}/{userName}")
+    public ResponseEntity<?> deleteJournalEntryById(@PathVariable("thisId") String thisId, @PathVariable("userName") String userName) {
         try {
             ObjectId objectId = new ObjectId(thisId);
-            journalEntryService.deleteEntry(objectId);
-            return true;
+            journalEntryService.deleteEntry(objectId, userName);
+            return ResponseEntity.status(HttpStatus.OK).body(true);
         }catch (Exception e){
-            throw new RuntimeException(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -66,7 +76,7 @@ public class JournalEntryControllerV2 {
                 oldEntry.setContent(newEntry.getContent());
             }
         }
-        journalEntryService.saveEntry(oldEntry);
+        /*journalEntryService.saveEntry(oldEntry, userName);*/
         return true;
     }
 
