@@ -61,23 +61,9 @@ public class JournalEntryControllerV2 {
         }
     }
 
-    @PutMapping("id/{thisId}")
-    public boolean updateJournalEntry(@PathVariable("thisId") String thisId, @RequestBody JournalEntry journalEntry){
-        JournalEntry oldEntry = getJournalEntryById(thisId);
-        JournalEntry newEntry = journalEntry;
-        if (oldEntry.equals(newEntry)){
-            return false;
-        }else {
-            oldEntry.setId(new ObjectId(thisId));
-            if (!newEntry.getTitle().isEmpty() && newEntry.getTitle() != null && !newEntry.getTitle().equals(oldEntry.getTitle())){
-                oldEntry.setTitle(newEntry.getTitle());
-            }
-            if (!newEntry.getContent().isEmpty() && newEntry.getContent() != null && !newEntry.getContent().equals(oldEntry.getContent())){
-                oldEntry.setContent(newEntry.getContent());
-            }
-        }
-        /*journalEntryService.saveEntry(oldEntry, userName);*/
-        return true;
+    @PutMapping("id/{thisId}/{userName}")
+    public ResponseEntity<?> updateJournalEntry(@PathVariable("thisId") String thisId, @RequestBody JournalEntry journalEntry, @PathVariable("userName") String userName){
+        return journalEntryService.updateJournalEntry(thisId, journalEntry, userName);
     }
 
 }
